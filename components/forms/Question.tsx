@@ -19,11 +19,19 @@ import { QuestionsSchema } from "@/lib/validations";
 import { Editor } from "@tinymce/tinymce-react";
 import { Badge } from "../ui/badge";
 import Image from "next/image";
+import { createQuestion } from "@/lib/actions/question.action";
+import { useRouter,usePathname} from "next/navigation";
 
 const type: any = "create";
 
-const Question = () => {
+interface Props{
+  mongoUserId:string
+}
+
+const Question = ({mongoUserId}:Props) => {
   const editorRef = useRef(null);
+  const router = useRouter();
+  const pathname = usePathname()
 
   const [isSubmitting, setisSubmitting] = useState(false);
   //   1. Define your form.
@@ -33,18 +41,28 @@ const Question = () => {
       title: "",
       explanation: "",
       tags: [],
+      
     },
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof QuestionsSchema>) {
+ async function onSubmit(values: z.infer<typeof QuestionsSchema>) {
     setisSubmitting(true);
     try {
       // make an aysync call to your api -> create a new Question
       // conatain all form data
-      // navigate to home page
+      await createQuestion({
+        title:values.title,
+        content:values.explanation,
+        tags:values.tags,
+        author:JSON.parse(mongoUserId),
+        path:pathname
+      });
+      router.push("/")
     } catch (error) {
+
     } finally {
+
       setisSubmitting(false);
     }
   }
@@ -128,6 +146,8 @@ const Question = () => {
                     // @ts-ignore
                     (editorRef.current = editor)
                   }
+                  onBlur={field.onBlur}
+                  onEditorChange={(content) => field.onChange(content)}
                   initialValue=""
                   init={{
                     height: 350,
